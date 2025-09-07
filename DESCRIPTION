@@ -1,16 +1,21 @@
 Package: moongraphics
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Create Formatted Graphics in 1 Line
 Version: 0.1.0
 Authors@R: c(
     person(
-      "Jane", "Doe",
-      email = "jane@example.com",
+      "Nicole", "Meyer",
+      email = "nicolemmeyer01@gmail.com",
       role = c("aut", "cre")
     )
   )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
+Description: moongraphics is a graph building package that helps to keep your code clean and organized, 
+  specially when working with ggplot2 graphs, that tend to make your code repetitive and extensive.
+  By wrapping all necessary graph logics into one simple function, moongraphics allows for users to easily create graphs with the 
+  standard built-in theme that are aesthetically pleasing, without needing to worry about remembering all the ggplot2 syntax 
+  to do that.
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
+RoxygenNote: 7.3.3
+Imports: dplyr
