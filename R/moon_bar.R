@@ -1,23 +1,48 @@
-
-source("R/validations/moon_bar.R")
+#' @title Pre-designed Bar Charts
+#'
+#' @description
+#' Creates bar charts with the appropriate groups, frequencies, methods, themes and other features
+#' according to the Moon theme definitions.
+#'
+#' @param data dataframe or tibble. Dataset to be used for the plot.
+#' @param groups character vector. Defines the variable(s) that should be used for frequency calculations.
+#' This function does not accept vectors with more than 2 variables, as bar charts would become unreadable
+#' with more than 3 attributes (2 groups + frequency).
+#' @param fill_by character. When using 2 groups, a method should always be chosen to insert the second group into the
+#' plot. This parameter defines the which variable should be used as the fill color for the chart.
+#' @param wrap_by character. When using 2 groups, a method should always be chosen to insert the second group into the
+#' plot. This parameter defines the which variable should be used to separate (wrap) the charts.
+#' @param palette character/vector. Pick a color to be used on the chart. Keep in mind that the number of colors
+#' specified should be equal to the number of categories in the grouping variable.
+#' @param text_mode character. Pick a method to display the frequency labels. Accepts the values: \code{"n"}, for
+#' frequency, \code{"p"}, for the frequency in percentage and \code{"np"} or \code{"pn"} for frequency in absolute value and relative percentage.
+#'
+#' @import dplyr
+#' @import ggplot2
+#' @import cli
+#'
+#' @return the requested plot.
+#'
+#' @export
 
 moon_bar <- function(data, groups, fill_by = NULL, wrap_by = NULL,
-                     palette = NULL, text_mode = NULL, stack_limit = 5) {
+                     palette = NULL, text_mode = NULL) {
 
   # Validating input
 
-  input <- list(groups = groups, fill_by = fill_by, wrap_by = wrap_by)
+  source("R/validations/moon_bar.R")
+
+  input <- list(groups = groups, fill_by = fill_by, wrap_by = wrap_by, text_mode = text_mode)
 
   message <- validate_moon_bar_parameters(input)
 
-  if(message != "") {stop(message)}
+  if(message != "") {cli::cli_abort(message)}
 
   # Grouping and summarising data
 
   df <- data %>%
     group_by(!!!syms(groups)) %>%
-    summarise(n = n()) %>%
-    mutate(aux__ = 1)
+    summarise(n = n())
 
   # Handling parameter logics
 
@@ -25,28 +50,13 @@ moon_bar <- function(data, groups, fill_by = NULL, wrap_by = NULL,
 
     grouping_factor <- ifelse(is.null(fill_by), wrap_by, fill_by)
     x <- groups[groups != grouping_factor]
-    fill <- ifelse(!is.null(fill_by), fill_by, "aux__")
-    color <- ifelse(is.null(palette) & !is.null(fill_by), "YlGnBu",
-                    ifelse(is.null(palette) & !is.null(wrap_by), "darkblue", palette))
-
-    if(length(unique(df[[grouping_factor]])) > stack_limit) {
-
-      position <- position_dodge()
-
-    } else {
-
-      position <- position_stack()
-
-    }
-
+    fill <- ifelse(!is.null(fill_by), fill_by, x)
 
   } else {
 
     grouping_factor <- NULL
     x <- groups
-    fill <- "aux__"
-    color <- ifelse(is.null(palette), "darkblue", palette)
-    position <- position_dodge()
+    fill <- x
 
   }
 
@@ -57,27 +67,35 @@ moon_bar <- function(data, groups, fill_by = NULL, wrap_by = NULL,
 
   # Adding the bar layer
 
-  if(length(groups) > 1 & !is.null(fill_by)) {
-    plot <- plot + geom_bar(stat = "identity", position = position)
-  } else {
-    plot <- plot + geom_bar(stat = "identity", fill = color, position = position)
-  }
+    plot <- plot + geom_bar(stat = "identity", position = position_dodge())
 
   # Fill: adding fill palette
 
-  if(length(groups) > 1 & !is.null(fill_by)) {
-
     if(is.null(palette)) {
 
-      plot <- plot + scale_fill_brewer(palette = color)
+      if(length(groups) > 1) {
+        plot <- plot + scale_fill_brewer(palette = "YlGnBu")
+      } else {
+        plot <- plot + scale_fill_manual(values = rep("darkblue", times = length(unique(df[[x]])))) +
+          theme(legend.position = "none")
+      }
 
     } else {
 
-      plot <- plot + scale_fill_manual(values = color)
+      if(length(palette) > 1) {
 
+        plot <- plot + scale_fill_manual(values = palette)
+
+      } else {
+
+        if(!is.null(fill_by)) {
+          plot <- plot + scale_fill_manual(values = rep(palette, times = length(unique(df[[grouping_factor]]))))
+        } else {
+          plot <- plot + scale_fill_manual(values = rep(palette, times = length(unique(df[[x]])))) +
+            theme(legend.position = "none")
+        }
+      }
     }
-
-  }
 
   # Adding text
 
@@ -87,7 +105,7 @@ moon_bar <- function(data, groups, fill_by = NULL, wrap_by = NULL,
       plot <- plot + geom_text(data = df, aes(label = n), position = position_dodge(width = 0.9), vjust = -0.25)
     }
 
-    if (text_mode == "%") {
+    if (text_mode == "p") {
 
       if (is.null(grouping_factor)) {
         df <- df %>% mutate(per = round(100*(n/sum(n)),1))
@@ -96,11 +114,12 @@ moon_bar <- function(data, groups, fill_by = NULL, wrap_by = NULL,
 
       }
 
-      plot <- plot + geom_text(data = df, aes(label = paste0(per, "%")), position = position_dodge(width = 0.9), vjust = -0.25)
+      plot <- plot + geom_text(data = df, aes(label = paste0(per, "%")),
+                               position = position_dodge(width = 0.9), vjust = -0.25)
 
     }
 
-    if (text_mode == "n%" | text_mode == "%n") {
+    if (text_mode == "np" | text_mode == "pn") {
 
       if (is.null(grouping_factor)) {
         df <- df %>% mutate(per = round(100*(n/sum(n)),0))
@@ -109,7 +128,8 @@ moon_bar <- function(data, groups, fill_by = NULL, wrap_by = NULL,
 
       }
 
-      plot <- plot + geom_text(data = df, aes(label = paste0(n, paste0("(", per, "%", ")"))), position = position_dodge(width = 0.9), vjust = -0.25)
+      plot <- plot + geom_text(data = df, aes(label = paste0(n, paste0("(", per, "%", ")"))),
+                               position = position_dodge(width = 0.9), vjust = -0.25)
 
     }
   }

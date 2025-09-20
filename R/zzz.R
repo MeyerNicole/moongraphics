@@ -1,11 +1,7 @@
 .onAttach <- function(libname, pkgname) {
 
-  package_version <- "1.0.0"
+  version <- utils::packageDescription(pkgname)$Version
 
-  packageStartupMessage(
-    "── Attaching moongraphics ─────────────────────────────────────────────────────────── ", "\n",
-    paste("✔", "moongraphics",package_version), "\n",
-    "   by Nicole Meyer"
-  )
+  cli::cli_alert_success("{pkgname} {version} attached successfully. \n Dev: MeyerNicole @ github")
 
 }

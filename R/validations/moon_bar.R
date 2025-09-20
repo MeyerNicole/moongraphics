@@ -26,6 +26,15 @@ validate_moon_bar_parameters <- function(params) {
 
   }
 
+  if(!is.null(params$text_mode)) {
+
+    if(!(params$text_mode %in% c("n", "p", "pn", "np"))) {
+
+      message <- "Unrecognized method. Implemented text modes: 'n', 'p', 'pn'/'np'"
+
+    }
+  }
+
   return(message)
 
 }
