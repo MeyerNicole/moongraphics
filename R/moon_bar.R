@@ -32,7 +32,7 @@ moon_bar <- function(data, groups, fill_by = NULL, wrap_by = NULL,
 
   input <- list(groups = groups, fill_by = fill_by, wrap_by = wrap_by, text_mode = text_mode)
 
-  message <- validate_moon_bar_parameters(input)
+  message <- validate_moon_bar(input)
 
   if(message != "") {cli::cli_abort(message)}
 

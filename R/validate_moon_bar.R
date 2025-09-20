@@ -1,4 +1,4 @@
-validate_moon_bar_parameters <- function(params) {
+validate_moon_bar <- function(params) {
 
   message <- ""
 
