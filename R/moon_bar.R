@@ -30,8 +30,6 @@ moon_bar <- function(data, groups, fill_by = NULL, wrap_by = NULL,
 
   # Validating input
 
-  source("R/validations/moon_bar.R")
-
   input <- list(groups = groups, fill_by = fill_by, wrap_by = wrap_by, text_mode = text_mode)
 
   message <- validate_moon_bar_parameters(input)
